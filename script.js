@@ -42,4 +42,14 @@ document.getElementById('save').addEventListener('click', () => {
   link.href = canvas.toDataURL();
   link.download = 'highlighted_area.png';
   link.click();
+  navigator.mediaDevices.getUserMedia({ video: true })
+  .then((stream) => {
+    const video = document.getElementById('camera');
+    video.srcObject = stream;
+    video.play(); // Ensure the video starts playing
+  })
+  .catch((error) => {
+    console.error('Camera access error:', error);
+    alert('Unable to access the camera. Please check permissions.');
+  });
 });
