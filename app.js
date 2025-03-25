@@ -6,7 +6,14 @@ let baseImage = null; // Store the uploaded image
 let isDrawing = false; // Flag to track drawing state
 let overlayPath = []; // Array to store the overlay points
 
-// Helper function to get pointer position (works for both mouse and touch)
+// Pointer element for mobile interaction
+const drawPointer = {
+  x: 50, // Initial x position
+  y: 50, // Initial y position
+  radius: 20, // Pointer size
+};
+
+// Helper function to get pointer position (for both mouse and touch)
 function getPointerPosition(event) {
   const rect = canvas.getBoundingClientRect(); // Get canvas position
   const x = (event.touches ? event.touches[0].clientX : event.clientX) - rect.left;
@@ -33,7 +40,10 @@ document.getElementById('upload1').addEventListener('change', (event) => {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(baseImage, 0, 0, canvas.width, canvas.height);
     overlayPath = []; // Reset overlay path
-    alert('Image uploaded! Hold and drag on the canvas to draw.');
+
+    // Draw the mobile pointer
+    drawPointerElement();
+    alert('Image uploaded! Tap the pointer to initiate drawing.');
   };
 
   img.onerror = () => {
@@ -41,11 +51,36 @@ document.getElementById('upload1').addEventListener('change', (event) => {
   };
 });
 
+// Draw the mobile pointer element
+function drawPointerElement() {
+  ctx.fillStyle = 'blue'; // Pointer color
+  ctx.beginPath();
+  ctx.arc(drawPointer.x, drawPointer.y, drawPointer.radius, 0, Math.PI * 2); // Draw circle
+  ctx.fill();
+}
+
+// Start drawing when the pointer is tapped or clicked
+canvas.addEventListener('click', (event) => {
+  const pos = getPointerPosition(event);
+
+  // Check if the pointer is clicked
+  const distance = Math.sqrt(
+    Math.pow(pos.x - drawPointer.x, 2) + Math.pow(pos.y - drawPointer.y, 2)
+  );
+
+  if (distance <= drawPointer.radius) {
+    alert('Drawing initiated! Hold and drag to draw.');
+    isDrawing = true; // Enable drawing mode
+    overlayPath = []; // Reset overlay path
+    ctx.beginPath();
+    ctx.moveTo(pos.x, pos.y); // Start drawing from pointer position
+  }
+});
+
 // Hold and Drag to Draw (Touch)
 canvas.addEventListener('touchstart', (event) => {
-  console.log('Touch Start Fired'); // Debugging log
-  isDrawing = true; // Enable drawing mode
-  overlayPath = []; // Reset overlay path
+  if (!isDrawing) return; // Prevent drawing if the pointer wasn't tapped
+
   const pos = getPointerPosition(event);
   overlayPath.push(pos); // Add the starting point
   ctx.beginPath();
@@ -54,7 +89,6 @@ canvas.addEventListener('touchstart', (event) => {
 });
 
 canvas.addEventListener('touchmove', (event) => {
-  console.log('Touch Move Fired'); // Debugging log
   if (!isDrawing) return;
 
   const pos = getPointerPosition(event);
@@ -68,7 +102,6 @@ canvas.addEventListener('touchmove', (event) => {
 });
 
 canvas.addEventListener('touchend', (event) => {
-  console.log('Touch End Fired'); // Debugging log
   isDrawing = false; // Disable drawing mode
   ctx.closePath(); // Close the path
   event.preventDefault(); // Prevent default touch behavior
@@ -76,9 +109,8 @@ canvas.addEventListener('touchend', (event) => {
 
 // Draw with Mouse (Desktop)
 canvas.addEventListener('mousedown', (event) => {
-  console.log('Mouse Down Fired'); // Debugging log
-  isDrawing = true; // Enable drawing mode
-  overlayPath = []; // Reset overlay path
+  if (!isDrawing) return; // Prevent drawing if the pointer wasn't clicked
+
   const pos = getPointerPosition(event);
   overlayPath.push(pos); // Add the starting point
   ctx.beginPath();
