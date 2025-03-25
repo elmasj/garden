@@ -6,7 +6,7 @@ let baseImage = null; // Store the uploaded image
 let isDrawing = false; // Flag to track drawing state
 let overlayPath = []; // Array to store the overlay points
 
-// Helper function to get pointer position (for both mouse and touch)
+// Helper function to get pointer position (works for both mouse and touch)
 function getPointerPosition(event) {
   const rect = canvas.getBoundingClientRect(); // Get canvas position
   const x = (event.touches ? event.touches[0].clientX : event.clientX) - rect.left;
@@ -43,6 +43,7 @@ document.getElementById('upload1').addEventListener('change', (event) => {
 
 // Hold and Drag to Draw (Touch)
 canvas.addEventListener('touchstart', (event) => {
+  console.log('Touch Start Fired'); // Debugging log
   isDrawing = true; // Enable drawing mode
   overlayPath = []; // Reset overlay path
   const pos = getPointerPosition(event);
@@ -53,6 +54,7 @@ canvas.addEventListener('touchstart', (event) => {
 });
 
 canvas.addEventListener('touchmove', (event) => {
+  console.log('Touch Move Fired'); // Debugging log
   if (!isDrawing) return;
 
   const pos = getPointerPosition(event);
@@ -66,13 +68,15 @@ canvas.addEventListener('touchmove', (event) => {
 });
 
 canvas.addEventListener('touchend', (event) => {
+  console.log('Touch End Fired'); // Debugging log
   isDrawing = false; // Disable drawing mode
   ctx.closePath(); // Close the path
-  event.preventDefault(); // Prevent default touch zoom/select
+  event.preventDefault(); // Prevent default touch behavior
 });
 
 // Draw with Mouse (Desktop)
 canvas.addEventListener('mousedown', (event) => {
+  console.log('Mouse Down Fired'); // Debugging log
   isDrawing = true; // Enable drawing mode
   overlayPath = []; // Reset overlay path
   const pos = getPointerPosition(event);
