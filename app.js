@@ -7,13 +7,18 @@ let overlayImage = null; // Store the second uploaded image
 let isDrawing = false; // Drawing mode flag
 let overlayPath = []; // Path for the overlay area
 
-// Helper function to get pointer position (works for both mouse and touch)
+// Helper function to get pointer position accurately
 function getPointerPosition(event) {
-  const rect = canvas.getBoundingClientRect();
-  const x = (event.touches ? event.touches[0].clientX : event.clientX) - rect.left;
-  const y = (event.touches ? event.touches[0].clientY : event.clientY) - rect.top;
-  return { x, y };
+  const rect = canvas.getBoundingClientRect(); // Get canvas position and dimensions
+
+  // Calculate pointer position relative to the canvas
+  const x = ((event.touches ? event.touches[0].clientX : event.clientX) - rect.left) * (canvas.width / rect.width);
+  const y = ((event.touches ? event.touches[0].clientY : event.clientY) - rect.top) * (canvas.height / rect.height);
+
+  // Return the corrected pointer position
+  return { x: Math.round(x), y: Math.round(y) };
 }
+
 
 // Step 1: Upload and Display the First Image
 document.getElementById('upload1').addEventListener('change', (event) => {
