@@ -3,19 +3,13 @@ const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 
 let baseImage = null; // Store the uploaded image
-let isDrawing = false; // Flag to track drawing state
-let overlayPath = []; // Array to store the overlay points
+let overlayImage = null; // Store the second uploaded image
+let isDrawing = false; // Drawing mode flag
+let overlayPath = []; // Path for the overlay area
 
-// Pointer element for mobile interaction
-const drawPointer = {
-  x: 50, // Initial x position
-  y: 50, // Initial y position
-  radius: 20, // Pointer size
-};
-
-// Helper function to get pointer position (for both mouse and touch)
+// Helper function to get pointer position (works for both mouse and touch)
 function getPointerPosition(event) {
-  const rect = canvas.getBoundingClientRect(); // Get canvas position
+  const rect = canvas.getBoundingClientRect();
   const x = (event.touches ? event.touches[0].clientX : event.clientX) - rect.left;
   const y = (event.touches ? event.touches[0].clientY : event.clientY) - rect.top;
   return { x, y };
@@ -40,10 +34,7 @@ document.getElementById('upload1').addEventListener('change', (event) => {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(baseImage, 0, 0, canvas.width, canvas.height);
     overlayPath = []; // Reset overlay path
-
-    // Draw the mobile pointer
-    drawPointerElement();
-    alert('Image uploaded! Tap the pointer to initiate drawing.');
+    alert('Image uploaded!');
   };
 
   img.onerror = () => {
@@ -51,94 +42,63 @@ document.getElementById('upload1').addEventListener('change', (event) => {
   };
 });
 
-// Draw the mobile pointer element
-function drawPointerElement() {
-  ctx.fillStyle = 'blue'; // Pointer color
+// Start Drawing Mode
+document.getElementById('startDrawingButton').addEventListener('click', () => {
+  if (!baseImage) {
+    alert('Please upload an image before starting to draw.');
+    return;
+  }
+
+  isDrawing = true; // Enable drawing mode
+  alert('Drawing mode enabled! Hold and drag on the canvas to draw.');
+});
+
+// Draw Freehand (Mouse and Touch)
+canvas.addEventListener('mousedown', startDrawing);
+canvas.addEventListener('mousemove', draw);
+canvas.addEventListener('mouseup', stopDrawing);
+canvas.addEventListener('mouseleave', stopDrawing);
+
+// Touch events for mobile
+canvas.addEventListener('touchstart', startDrawing);
+canvas.addEventListener('touchmove', draw);
+canvas.addEventListener('touchend', stopDrawing);
+
+// Start Drawing
+function startDrawing(event) {
+  if (!isDrawing) return; // Do nothing if drawing mode is not enabled
+
+  const pos = getPointerPosition(event);
+  overlayPath = []; // Reset overlay path
+  overlayPath.push(pos); // Add the starting point
   ctx.beginPath();
-  ctx.arc(drawPointer.x, drawPointer.y, drawPointer.radius, 0, Math.PI * 2); // Draw circle
-  ctx.fill();
+  ctx.moveTo(pos.x, pos.y);
+  event.preventDefault(); // Prevent default behavior
 }
 
-// Start drawing when the pointer is tapped or clicked
-canvas.addEventListener('click', (event) => {
-  const pos = getPointerPosition(event);
-
-  // Check if the pointer is clicked
-  const distance = Math.sqrt(
-    Math.pow(pos.x - drawPointer.x, 2) + Math.pow(pos.y - drawPointer.y, 2)
-  );
-
-  if (distance <= drawPointer.radius) {
-    alert('Drawing initiated! Hold and drag to draw.');
-    isDrawing = true; // Enable drawing mode
-    overlayPath = []; // Reset overlay path
-    ctx.beginPath();
-    ctx.moveTo(pos.x, pos.y); // Start drawing from pointer position
-  }
-});
-
-// Hold and Drag to Draw (Touch)
-canvas.addEventListener('touchstart', (event) => {
-  if (!isDrawing) return; // Prevent drawing if the pointer wasn't tapped
+// Draw
+function draw(event) {
+  if (!isDrawing || overlayPath.length === 0) return;
 
   const pos = getPointerPosition(event);
-  overlayPath.push(pos); // Add the starting point
-  ctx.beginPath();
-  ctx.moveTo(pos.x, pos.y);
-  event.preventDefault(); // Prevent default touch behavior
-});
+  overlayPath.push(pos); // Add position to the path
 
-canvas.addEventListener('touchmove', (event) => {
-  if (!isDrawing) return;
-
-  const pos = getPointerPosition(event);
-  overlayPath.push(pos); // Add the position to the overlay path
-
-  ctx.lineTo(pos.x, pos.y); // Draw a line to the new position
+  ctx.lineTo(pos.x, pos.y);
   ctx.strokeStyle = 'red';
   ctx.lineWidth = 2;
-  ctx.stroke(); // Render the stroke
-  event.preventDefault(); // Prevent default touch scrolling
-});
+  ctx.stroke();
+  event.preventDefault(); // Prevent default scrolling on touch
+}
 
-canvas.addEventListener('touchend', (event) => {
+// Stop Drawing
+function stopDrawing() {
+  if (!isDrawing) return; // Do nothing if drawing mode is not enabled
+
   isDrawing = false; // Disable drawing mode
-  ctx.closePath(); // Close the path
-  event.preventDefault(); // Prevent default touch behavior
-});
+  ctx.closePath();
+}
 
-// Draw with Mouse (Desktop)
-canvas.addEventListener('mousedown', (event) => {
-  if (!isDrawing) return; // Prevent drawing if the pointer wasn't clicked
-
-  const pos = getPointerPosition(event);
-  overlayPath.push(pos); // Add the starting point
-  ctx.beginPath();
-  ctx.moveTo(pos.x, pos.y);
-});
-
-canvas.addEventListener('mousemove', (event) => {
-  if (!isDrawing) return;
-
-  const pos = getPointerPosition(event);
-  overlayPath.push(pos); // Add the position to the overlay path
-
-  ctx.lineTo(pos.x, pos.y); // Draw a line to the new position
-  ctx.strokeStyle = 'red';
-  ctx.lineWidth = 2;
-  ctx.stroke(); // Render the stroke
-});
-
-canvas.addEventListener('mouseup', (event) => {
-  isDrawing = false; // Disable drawing mode
-  ctx.closePath(); // Close the path
-});
-
-canvas.addEventListener('mouseleave', () => {
-  isDrawing = false; // Disable drawing mode when leaving the canvas
-});
-
-// Step 3: Upload and Apply the Second Image
+// Step 2: Upload and Apply the Second Image
 document.getElementById('upload2').addEventListener('change', (event) => {
   const file = event.target.files[0];
   if (!file) {
@@ -160,6 +120,7 @@ document.getElementById('upload2').addEventListener('change', (event) => {
   };
 });
 
+// Apply Overlay
 document.getElementById('applyOverlay').addEventListener('click', () => {
   if (!baseImage || !overlayImage || overlayPath.length === 0) {
     alert('Please make sure both images are uploaded and the overlay area is drawn!');
@@ -181,6 +142,5 @@ document.getElementById('applyOverlay').addEventListener('click', () => {
 
   // Draw the second image within the clipped region
   ctx.drawImage(overlayImage, 0, 0, canvas.width, canvas.height);
-
   ctx.restore();
 });
